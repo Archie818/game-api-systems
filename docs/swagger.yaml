@@ -1,0 +1,771 @@
+definitions:
+  handlers.ChallengeRequest:
+    properties:
+      player_id:
+        type: integer
+    required:
+    - player_id
+    type: object
+  handlers.ChallengeResponse:
+    properties:
+      error:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+    type: object
+  handlers.LogRequest:
+    properties:
+      action:
+        description: e.g., Register, Login, Logout, Enter Room, Exit Room, Participate
+          in Challenge, Challenge Result
+        type: string
+      details:
+        description: Additional information about the action
+        type: string
+      player_id:
+        type: integer
+    required:
+    - action
+    - details
+    - player_id
+    type: object
+  handlers.LogResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  handlers.PaymentRequest:
+    type: object
+  handlers.ReservationInput:
+    properties:
+      date:
+        description: 'Expected format: "YYYY-MM-DD"'
+        type: string
+      player_info:
+        description: JSON or string
+        type: string
+      room_id:
+        type: integer
+      time:
+        description: 'Expected format: "HH:MM-HH:MM"'
+        type: string
+    required:
+    - date
+    - player_info
+    - room_id
+    - time
+    type: object
+  models.Challenge:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      player_id:
+        type: integer
+      won:
+        type: boolean
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        example: some thing wrong...
+        type: string
+    type: object
+  models.Level:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  models.Log:
+    properties:
+      action:
+        description: e.g., Register, Login, Logout, Enter Room, Exit Room, Participate
+          in Challenge, Challenge Result
+        type: string
+      details:
+        description: Additional information about the action
+        type: string
+      id:
+        type: integer
+      player_id:
+        type: integer
+      timestamp:
+        description: Automatically set to current time on creation
+        type: string
+    type: object
+  models.Payment:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      details:
+        description: JSON string containing payment method details
+        type: string
+      error_message:
+        description: Populated on failure
+        type: string
+      id:
+        type: integer
+      method:
+        description: e.g., CreditCard, BankTransfer, ThirdParty, Blockchain
+        type: string
+      player_id:
+        type: integer
+      status:
+        description: e.g., Pending, Success, Failed
+        type: string
+      transaction_id:
+        description: Populated on success
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Player:
+    properties:
+      id:
+        type: string
+      level_id:
+        type: string
+      name:
+        type: string
+    type: object
+  models.Reservation:
+    properties:
+      created_at:
+        type: string
+      date:
+        type: string
+      id:
+        type: integer
+      player_info:
+        type: string
+      room_id:
+        type: integer
+      time:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Room:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.SuccessResponse:
+    properties:
+      status:
+        example: success
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /challenges:
+    post:
+      consumes:
+      - application/json
+      description: Players can participate in an endless challenge by paying 20.01.
+      parameters:
+      - description: Challenge Participation
+        in: body
+        name: challenge
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Challenge started
+          schema:
+            $ref: '#/definitions/handlers.ChallengeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ChallengeResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ChallengeResponse'
+      summary: Participate in a Challenge
+      tags:
+      - Challenges
+  /challenges/results:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of recent challenge results.
+      parameters:
+      - description: Maximum number of results to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of recent challenges
+          schema:
+            items:
+              $ref: '#/definitions/models.Challenge'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get Recent Challenge Results
+      tags:
+      - Challenges
+  /levels:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all levels
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of levels
+          schema:
+            items:
+              $ref: '#/definitions/models.Level'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get all levels
+      tags:
+      - levels
+    post:
+      consumes:
+      - application/json
+      description: Create a new level in the system
+      parameters:
+      - description: Level Information
+        in: body
+        name: level
+        required: true
+        schema:
+          $ref: '#/definitions/models.Level'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created level ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Add a new level
+      tags:
+      - levels
+  /logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of game logs with optional filters.
+      parameters:
+      - description: Filter by Player ID
+        in: query
+        name: player_id
+        type: integer
+      - description: Filter by Action Type (e.g., Register, Login)
+        in: query
+        name: action
+        type: string
+      - description: Filter logs from this time (RFC3339 format)
+        in: query
+        name: start_time
+        type: string
+      - description: Filter logs up to this time (RFC3339 format)
+        in: query
+        name: end_time
+        type: string
+      - description: Maximum number of logs to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of game logs
+          schema:
+            items:
+              $ref: '#/definitions/models.Log'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Retrieve Game Logs
+      tags:
+      - Logs
+    post:
+      consumes:
+      - application/json
+      description: Create a new game operation log.
+      parameters:
+      - description: Game Log Information
+        in: body
+        name: log
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LogRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New Log ID
+          schema:
+            $ref: '#/definitions/handlers.LogResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create a Game Log
+      tags:
+      - Logs
+  /payments:
+    post:
+      consumes:
+      - application/json
+      description: Process a payment using various payment methods.
+      parameters:
+      - description: Payment Information
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment Status
+          schema:
+            $ref: '#/definitions/models.Payment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Payment'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Payment'
+      summary: Process a Payment
+      tags:
+      - Payments
+  /payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific payment.
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment Details
+          schema:
+            $ref: '#/definitions/models.Payment'
+        "404":
+          description: Payment Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get Payment Details
+      tags:
+      - Payments
+  /players:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all players with their level information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of players
+          schema:
+            items:
+              $ref: '#/definitions/models.Player'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get all players
+      tags:
+      - players
+    post:
+      consumes:
+      - application/json
+      description: Create a new player with a specified level
+      parameters:
+      - description: Player Information
+        in: body
+        name: player
+        required: true
+        schema:
+          $ref: '#/definitions/models.Player'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created player ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Register a new player
+      tags:
+      - players
+  /players/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a player from the system by their ID
+      parameters:
+      - description: Player ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion status
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Delete a player
+      tags:
+      - players
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information of a player by their ID
+      parameters:
+      - description: Player ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Player details
+          schema:
+            $ref: '#/definitions/models.Player'
+        "404":
+          description: Player not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get player by ID
+      tags:
+      - players
+    put:
+      consumes:
+      - application/json
+      description: Update the information of an existing player
+      parameters:
+      - description: Player ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated Player Information
+        in: body
+        name: player
+        required: true
+        schema:
+          $ref: '#/definitions/models.Player'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update status
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update player information
+      tags:
+      - players
+  /reservations:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve reservations with optional filters for room ID, date,
+        and limit
+      parameters:
+      - description: Room ID to filter reservations
+        in: query
+        name: room_id
+        type: integer
+      - description: Date to filter reservations (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      - description: Maximum number of reservations to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of reservations
+          schema:
+            items:
+              $ref: '#/definitions/models.Reservation'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get reservations
+      tags:
+      - reservations
+    post:
+      consumes:
+      - application/json
+      description: Add a new reservation for a game room
+      parameters:
+      - description: Reservation Information
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ReservationInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created reservation ID
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create a new reservation
+      tags:
+      - reservations
+  /rooms:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all game rooms with their details
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A list of game rooms
+          schema:
+            items:
+              $ref: '#/definitions/models.Room'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get all game rooms
+      tags:
+      - rooms
+    post:
+      consumes:
+      - application/json
+      description: Add a new game room with specified name and description
+      parameters:
+      - description: Room Information
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/models.Room'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created room ID
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create a new game room
+      tags:
+      - rooms
+  /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a game room from the system by its ID
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion status
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Delete a room
+      tags:
+      - rooms
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information of a game room by its ID
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room details
+          schema:
+            $ref: '#/definitions/models.Room'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get room details by ID
+      tags:
+      - rooms
+    put:
+      consumes:
+      - application/json
+      description: Update the information of an existing game room
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Room Information
+        in: body
+        name: room
+        required: true
+        schema:
+          $ref: '#/definitions/models.Room'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update status
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update room information
+      tags:
+      - rooms
+swagger: "2.0"
